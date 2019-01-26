@@ -381,7 +381,7 @@ int main(int argc, const char * argv[])
 	{
 		double T = temp[i];
 		double kb = lattice.kb;
-		double beta = beta = 1./(kb*T);
+		double beta  = 1./(kb*T);
 		lattice.thermalize(n_skip, T, sweep_bin);	// discard the nonequilibrium MC steps
 		lattice.thermalize(n_measure, T, sweep_bin);  // make measurements
 		
