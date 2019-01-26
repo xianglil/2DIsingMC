@@ -1,0 +1,35 @@
+This is a C++ program to simulate the classical 2d Ising model with Monte Carlo method.
+
+######################################################
+Contents:
+Array3D.hpp: a class for 2d and 3d matrices. Note the matrix element is in column-major order. A preference of Fortran, and may be useful if LAPACK library is needed in the future.
+
+Main.cpp: The main code. You may want to convert it into header + cpp files if you want to combine it with other codes.
+
+plot.py: plot the outputs.
+######################################################
+
+To run the code:
+	g++ -std=c++11 main.cpp
+	./a.out
+Then it will create an file called "output.dat". You can then visualize the data with:
+	python plot.py
+
+You may also simply type
+	make
+
+######################################################
+Note that by default the temperature goes from high to low. This is because if we start at very low temperature, and set the initial spins as random, then it is possible that states such as
+	+ + + - - - +
+	+ + + - - - +
+	+ + + - - - +
+   can survive, and make the result looks weird.
+
+######################################################
+If you have any question, please email Xianglin at
+xianglinliu01@gmail.com
+
+######################################################
+
+Happy exploring ! ^_^
+
