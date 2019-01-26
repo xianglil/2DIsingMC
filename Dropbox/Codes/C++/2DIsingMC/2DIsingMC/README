@@ -15,9 +15,6 @@ To run the code:
 Then it will create an file called "output.dat". You can then visualize the data with:
 	python plot.py
 
-You may also simply type
-	make
-
 ######################################################
 Note that by default the temperature goes from high to low. This is because if we start at very low temperature, and set the initial spins as random, then it is possible that states such as
 	+ + + - - - +
