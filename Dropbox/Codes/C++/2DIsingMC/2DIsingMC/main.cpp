@@ -334,7 +334,7 @@ int main(int argc, const char * argv[])
 	double temp_ini = 4.00;
 	double temp_end = 0.01;
 	int n_temp = 20;
-	int n_warm = 1000;
+	int n_warm = 10000;
 	int n_skip = 2000;
 	int n_measure = 1000;
 	
