@@ -334,9 +334,9 @@ int main(int argc, const char * argv[])
 	double temp_ini = 4.00;
 	double temp_end = 0.01;
 	int n_temp = 20;
-	int n_warm = 10000;
+	int n_warm = 2000;
 	int n_skip = 2000;
-	int n_measure = 1000;
+	int n_measure = 4000;
 	
 	//	calculate temperatures
 	vector<double> temp;
@@ -385,10 +385,13 @@ int main(int argc, const char * argv[])
 		lattice.thermalize(n_skip, T, sweep_bin);	// discard the nonequilibrium MC steps
 		lattice.thermalize(n_measure, T, sweep_bin);  // make measurements
 		
+		int NN = lx*ly;
 		double en_ave = mean(sweep_bin.energy_ave);
 		double mag_ave = mean(sweep_bin.magnetization_ave);
-		double cv = variance(sweep_bin.energy_ave)/(kb*T*T);
-		double chi = beta*variance(sweep_bin.magnetization_ave);
+		// times NN to accout for the extra NN divided when (en/NN)**2 is applied
+		// should have been en**2/NN
+		double cv = NN*variance(sweep_bin.energy_ave)/(kb*T*T);
+		double chi = NN*beta*variance(sweep_bin.magnetization_ave);
 
 		energy_T.push_back( en_ave );
 		magnetization_T.push_back( mag_ave );

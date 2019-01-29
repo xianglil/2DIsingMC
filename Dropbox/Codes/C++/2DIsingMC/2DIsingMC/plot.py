@@ -20,7 +20,7 @@ ax.plot(x, y, "ro")
 ax.set_xlabel('T')
 ax.set_ylabel('energy')
 
-y = magnetization.astype(float)
+y = abs(magnetization.astype(float))
 ax = axes[0,1]
 ax.plot(x, y, "bo")
 ax.set_xlabel('T')
