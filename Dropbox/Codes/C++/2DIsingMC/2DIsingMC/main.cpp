@@ -135,7 +135,7 @@ public:
 		{
 			for (int i=0; i<lx; i++)
 			{
-				printf( "%3d",sigma(i,j));
+				printf( "%2d",sigma(i,j));
 			}
 			cout << endl;
 		}
@@ -151,6 +151,25 @@ public:
 			calObservables(sweep_bin);
 		}
 	}
+
+    void thermalize(int n, double T, Sweep_bin& sweep_bin, std::ofstream& file)
+    {
+
+        sweep_bin.reset();
+        for (int i=0; i<n; i++)
+        {
+            updateSweep_Metro(T, sweep_bin);
+            calObservables(sweep_bin);
+            for (int j=0; j<ly; j++)
+            {
+                for (int i=0; i<lx; i++)
+                {
+                    file << sigma(i,j) << " ";
+                }
+            }
+            file << endl;
+        }
+    }
 	
 	// spins initialized randomly
 	void initRandom()
@@ -327,16 +346,22 @@ void TEST()
 #ifdef TEST
 	TEST();
 #endif
+
+//==========================================================
+// This is the main function
+//==========================================================
+
 int main(int argc, const char * argv[])
 {
 	Timer time; //record time
 	//	set up parameters
-	double temp_ini = 4.00;
-	double temp_end = 0.01;
-	int n_temp = 20;
-	int n_warm = 2000;
-	int n_skip = 2000;
-	int n_measure = 4000;
+	double temp_ini = 4.00; // initial temperature (T)
+	double temp_end = 0.01; // endding T
+	int n_temp = 20;   // number of T
+	int n_warm = 2000; // number of MC steps discarded for the first T
+	int n_skip = 2000; // number of MC steps discarded when T changes
+	int n_measure = 4000; // number of MC steps to measure the observables
+    int n_output = 100; // number of MC samples to be written at each T
 	
 	//	calculate temperatures
 	vector<double> temp;
@@ -352,11 +377,11 @@ int main(int argc, const char * argv[])
 	}
 	
 	//	set up lattice
-	int lx = 40;
-	int ly = 40;
-	double h = 0.00;
-	double J = 1.0;
-	bool randomInit = true;
+	int lx = 20;
+	int ly = 20; // lattice size (lx*ly)
+	double h = 0.00; // magnetic field
+	double J = 1.0;  // coupling constant
+	bool randomInit = true; // random initialization or not for the spin configuration
 	Lattice lattice(lx, ly, randomInit, h, J);
 	
 	//	print the parameters
@@ -377,13 +402,21 @@ int main(int argc, const char * argv[])
 	//	MC simulation
 	Sweep_bin sweep_bin;
 	lattice.thermalize(n_warm, temp_ini, sweep_bin); // initial warm up
-	for (int i = 0; i < n_temp; i++ )
+	
+    for (int i = 0; i < n_temp; i++ )
 	{
 		double T = temp[i];
 		double kb = lattice.kb;
 		double beta  = 1./(kb*T);
 		lattice.thermalize(n_skip, T, sweep_bin);	// discard the nonequilibrium MC steps
+        
+        std::ofstream file;
+        string file_name = "spins_";
+        file_name += std::to_string(i);
+        file.open(file_name);
 		lattice.thermalize(n_measure, T, sweep_bin);  // make measurements
+		lattice.thermalize(n_output, T, sweep_bin, file);  // write the spin configurations
+        file.close();
 		
 		int NN = lx*ly;
 		double en_ave = mean(sweep_bin.energy_ave);
