@@ -152,24 +152,24 @@ public:
 		}
 	}
 
-    void thermalize(int n, double T, Sweep_bin& sweep_bin, std::ofstream& file)
-    {
+	void thermalize(int n, double T, Sweep_bin& sweep_bin, std::ofstream& file)
+	{
 
-        sweep_bin.reset();
-        for (int i=0; i<n; i++)
-        {
-            updateSweep_Metro(T, sweep_bin);
-            calObservables(sweep_bin);
-            for (int j=0; j<ly; j++)
-            {
-                for (int i=0; i<lx; i++)
-                {
-                    file << sigma(i,j) << " ";
-                }
-            }
-            file << endl;
-        }
-    }
+		sweep_bin.reset();
+		for (int i=0; i<n; i++)
+		{
+			updateSweep_Metro(T, sweep_bin);
+			calObservables(sweep_bin);
+			for (int j=0; j<ly; j++)
+			{
+				for (int i=0; i<lx; i++)
+				{
+					file << sigma(i,j) << " ";
+				}
+			}
+			file << endl;
+		}
+	}
 	
 	// spins initialized randomly
 	void initRandom()
@@ -359,9 +359,9 @@ int main(int argc, const char * argv[])
 	double temp_end = 0.01; // endding T
 	int n_temp = 20;   // number of T
 	int n_warm = 2000; // number of MC steps discarded for the first T
-	int n_skip = 2000; // number of MC steps discarded when T changes
+	int n_skip = 10000; // number of MC steps discarded when T changes
 	int n_measure = 4000; // number of MC steps to measure the observables
-    int n_output = 100; // number of MC samples to be written at each T
+	int n_output = 100; // number of MC samples to be written at each T
 	
 	//	calculate temperatures
 	vector<double> temp;
@@ -403,7 +403,7 @@ int main(int argc, const char * argv[])
 	Sweep_bin sweep_bin;
 	lattice.thermalize(n_warm, temp_ini, sweep_bin); // initial warm up
 	
-    for (int i = 0; i < n_temp; i++ )
+	for (int i = 0; i < n_temp; i++ )
 	{
 		double T = temp[i];
 		double kb = lattice.kb;
@@ -414,8 +414,8 @@ int main(int argc, const char * argv[])
         string file_name = "spins_";
         file_name += std::to_string(i);
         file.open(file_name);
-		lattice.thermalize(n_measure, T, sweep_bin);  // make measurements
 		lattice.thermalize(n_output, T, sweep_bin, file);  // write the spin configurations
+		lattice.thermalize(n_measure, T, sweep_bin);  // make measurements
         file.close();
 		
 		int NN = lx*ly;
