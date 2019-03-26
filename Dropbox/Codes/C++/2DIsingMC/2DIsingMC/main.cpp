@@ -27,13 +27,18 @@ using Array3d::Array2d;
 //	A Mersenne twister random number generator is used. Better than rand()
 //	in cstdlib (commented below).
 
-/*
- double getRandom_cstd()
- {
+// this is necessary since the modulo can be negative in C++
+// which is very different from python
+inline int positive_modulo(int i, int n) {
+	return (i % n + n) % n;
+}
+
+double getRandom_cstd()
+{
 	int randomNumber = std::rand();
 	return float(randomNumber)/float(RAND_MAX);
- }
- */
+}
+ 
 
 class Random_mt
 {
@@ -178,6 +183,7 @@ public:
 			for (int i=0; i<lx; i++)
 			{
 				if (random_mt.getRandom() < 0.5)
+				//if (getRandom_cstd() < 0.5)
 				{
 					sigma(i,j) = 1;
 				}
@@ -192,7 +198,7 @@ public:
 	double Hamiltonian(int i, int j)
 	{
 		double H = 0;
-		H = -sigma(i,j)*(h + J * ( sigma((i+1)%lx,j) + sigma(i,(j+1)%ly ) ) );
+		H = -sigma(i,j)*(h + J * ( sigma(positive_modulo(i+1, lx),j) + sigma(i,positive_modulo(j+1, ly) ) ) );
 		return H;
 	}
 	
@@ -200,8 +206,8 @@ public:
 	double changeE(int i, int j)
 	{
 		double deltaE = 0;
-		double change = sigma((i+1)%lx,j) + sigma((i-1)%lx,j)
-		+ sigma(i,(j+1)%ly) + sigma(i,(j-1)%ly);
+		double change = sigma(positive_modulo(i+1, lx),j) + sigma(positive_modulo(i-1, lx),j)
+		+ sigma(i,positive_modulo(j+1, ly)) + sigma(i,positive_modulo(j-1, ly));
 		deltaE = 2*sigma(i,j)*(h + J*change);
 		return deltaE;
 	}
@@ -216,6 +222,7 @@ public:
 			for (int i=0; i<lx; i++)
 			{
 				double rd = random_mt.getRandom();
+				//double rd = getRandom_cstd();
 				double deltaE = changeE(i, j); // change of E due to flip of the spin.
 				if (1./(1.+exp(beta*deltaE))>rd)
 				{
@@ -237,16 +244,9 @@ public:
 			for (int i=0; i<lx; i++)
 			{
 				double rd = random_mt.getRandom();
+				//double rd = getRandom_cstd();
 				double deltaE = changeE(i, j); // change of E due to flip of the spin.
-				if (deltaE > 0)
-				{
-					if (exp(-beta*deltaE) > rd)
-					{
-						sigma(i,j) = -sigma(i,j);
-						accept_tot += 1.0;
-					}
-				}
-				else
+				if (exp(-beta*deltaE) > rd)
 				{
 					sigma(i,j) = -sigma(i,j);
 					accept_tot += 1.0;
@@ -270,7 +270,7 @@ public:
 			}
 		}
 		sweep_bin.energy_ave.push_back( en_tot/(lx*ly) );
-		sweep_bin.magnetization_ave.push_back( mag_tot/(lx*ly) );
+		sweep_bin.magnetization_ave.push_back( fabs(mag_tot)/(lx*ly) );
 	}
 	
 };
@@ -356,13 +356,13 @@ int main(int argc, const char * argv[])
 	Timer time; //record time
 	//	set up parameters
 	double temp_ini = 4.00; // initial temperature (T)
-	double temp_end = 0.01; // endding T
+	double temp_end = 0.20; // endding T
 	int n_temp = 20;   // number of T
-	int n_warm = 2000; // number of MC steps discarded for the first T
-	int n_skip = 10000; // number of MC steps discarded when T changes
-	int n_measure = 4000; // number of MC steps to measure the observables
-	int n_output = 100; // number of MC samples to be written at each T
-	
+	int n_warm = 0; // number of MC steps discarded for the first T
+	int n_skip = 1000; // number of MC steps discarded when T changes
+	int n_measure = 1000; // number of MC steps to measure the observables
+	int n_output = 10; // number of MC samples to be written at each T
+	int n_mcs_per_sample = 1; // number of mcs steps between each measurement
 	//	calculate temperatures
 	vector<double> temp;
 	for (int i=0; i<n_temp; i++)
@@ -377,8 +377,8 @@ int main(int argc, const char * argv[])
 	}
 	
 	//	set up lattice
-	int lx = 20;
-	int ly = 20; // lattice size (lx*ly)
+	int lx = 8;
+	int ly = 8; // lattice size (lx*ly)
 	double h = 0.00; // magnetic field
 	double J = 1.0;  // coupling constant
 	bool randomInit = true; // random initialization or not for the spin configuration
@@ -423,8 +423,16 @@ int main(int argc, const char * argv[])
 		double mag_ave = mean(sweep_bin.magnetization_ave);
 		// times NN to accout for the extra NN divided when (en/NN)**2 is applied
 		// should have been en**2/NN
-		double cv = NN*variance(sweep_bin.energy_ave)/(kb*T*T);
-		double chi = NN*beta*variance(sweep_bin.magnetization_ave);
+        vector<double> energy_sample;
+        vector<double> magnetization_sample;
+        int sweeps_size = sweep_bin.energy_ave.size();
+        for (int i = 0; i < sweeps_size; i += n_mcs_per_sample)
+        {
+            energy_sample.push_back(sweep_bin.energy_ave[i]);
+            magnetization_sample.push_back(sweep_bin.magnetization_ave[i]);
+        }
+		double cv = NN*variance(energy_sample)/(kb*T*T);
+		double chi = NN*beta*variance(magnetization_sample);
 
 		energy_T.push_back( en_ave );
 		magnetization_T.push_back( mag_ave );
@@ -439,8 +447,8 @@ int main(int argc, const char * argv[])
 	<< "specific_heat " << "magnetic_susceptibility " << endl;
 	for (int i=0; i < n_temp; i++ )
 	{
-		file << std::setw(12) << temp[i] << std::setw(12) <<
-		energy_T[i] << std::setw(12) << magnetization_T[i] <<
+		file << std::setw(16) << temp[i] << std::setw(16) <<
+		energy_T[i] << std::setw(16) << magnetization_T[i] <<
 		std::setw(16) << specificHeat_T[i] << std::setw(16) <<
 		magneticSusceptibility_T[i] << "\n";
 	}
