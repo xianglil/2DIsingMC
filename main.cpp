@@ -361,8 +361,8 @@ int main(int argc, const char * argv[])
 	int n_temp = 20;   // number of T
 	int n_warm = 0; // number of MC steps discarded for the first T
 	int n_skip = 1000; // number of MC steps discarded when T changes
-	int n_measure = 10000; // number of MC steps to measure the observables
-	int n_output = 10; // number of MC samples to be written at each T
+	int n_measure = 1000; // number of MC steps to measure the observables
+	int n_output = 1; // number of MC samples to be written at each T
 	int n_mcs_per_sample = 1; // number of mcs steps between each measurement
 	//	calculate temperatures
 	vector<double> temp;
